@@ -1,5 +1,5 @@
-// Lensa PDF service worker: bikin aplikasi bisa dibuka offline dan menerima PDF dari menu Bagikan.
-const VERSION = 'lensa-v1';
+// Lensa PDF service worker: bikin aplikasi bisa dibuka offline dan menerima file (PDF, Word, Excel, gambar) dari menu Bagikan.
+const VERSION = 'lensa-v2';
 const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png',
   './icon-maskable-512.png', './apple-touch-icon.png', PDFJS + 'pdf.min.js', PDFJS + 'pdf.worker.min.js'];
@@ -25,12 +25,14 @@ self.addEventListener('fetch', e => {
     e.respondWith((async () => {
       try {
         const form = await req.formData();
-        const file = form.get('pdf');
-        if (file) {
-          const c = await caches.open('lensa-share');
-          await c.put(new URL('shared.pdf', self.registration.scope).href, new Response(file, {
-            headers: { 'content-type': file.type || 'application/pdf',
-                       'x-name': encodeURIComponent(file.name || 'dokumen.pdf') }
+        const files = [...form.getAll('files'), ...form.getAll('pdf')].filter(f => f && typeof f !== 'string');
+        const c = await caches.open('lensa-share');
+        for (const k of await c.keys()) await c.delete(k);
+        for (let i = 0; i < files.length; i++) {
+          const f = files[i];
+          await c.put(new URL('shared-' + i, self.registration.scope).href, new Response(f, {
+            headers: { 'content-type': f.type || 'application/octet-stream',
+                       'x-name': encodeURIComponent(f.name || ('file-' + (i + 1))) }
           }));
         }
       } catch (err) {}
@@ -50,7 +52,7 @@ self.addEventListener('fetch', e => {
   }
 
   // File lain (ikon, pdf.js, font): pakai cache, perbarui di belakang.
-  if (url.origin === location.origin || url.href.startsWith(PDFJS) || url.hostname.endsWith('gstatic.com') || url.hostname === 'fonts.googleapis.com') {
+  if (url.origin === location.origin || url.hostname === 'cdnjs.cloudflare.com' || url.hostname === 'cdn.jsdelivr.net' || url.hostname.endsWith('gstatic.com') || url.hostname === 'fonts.googleapis.com') {
     e.respondWith(caches.match(req).then(hit => {
       const net = fetch(req).then(r => {
         if (r.ok || r.type === 'opaque') { const copy = r.clone(); caches.open(VERSION).then(c => c.put(req, copy)); }
