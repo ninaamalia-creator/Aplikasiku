@@ -1,5 +1,5 @@
 // Lensa PDF service worker: bikin aplikasi bisa dibuka offline dan menerima file (PDF, Word, Excel, gambar) dari menu Bagikan.
-const VERSION = 'lensa-v2';
+const VERSION = 'lensa-v3';
 const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png',
   './icon-maskable-512.png', './apple-touch-icon.png', PDFJS + 'pdf.min.js', PDFJS + 'pdf.worker.min.js'];

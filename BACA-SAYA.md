@@ -30,10 +30,11 @@ Dari laptop ada cara yang lebih cepat: buka app.netlify.com/drop lalu seret fold
 
 Kalau Lensa PDF belum muncul di daftar Bagikan, tutup Chrome sepenuhnya lalu buka lagi aplikasinya sekali.
 
-## Ubah ke PDF
-- Buka tab **Ubah ke PDF**, pilih Word, Excel, atau Gambar, pilih file, lalu ketuk **Ubah ke PDF**.
+## Ubah file
+- Buka tab **Ubah File**, pilih Word ke PDF, Excel ke PDF, Gambar ke PDF, atau PDF ke Word, pilih file, lalu ketuk tombol ubah.
 - Bisa juga langsung dari WhatsApp: tekan lama file Word/Excel/foto → Bagikan → Lensa PDF.
-- Hasilnya bisa **Simpan PDF** (masuk ke folder Download), **Bagikan** (misalnya kirim balik ke WhatsApp), atau **Lihat di Lensa**.
+- Hasilnya bisa **Unduh** (masuk ke folder Download) atau **Bagikan** (misalnya kirim balik ke WhatsApp). Hasil PDF juga bisa **Lihat di Lensa**.
+- **PDF ke Word:** teks bisa diedit; tabel jadi kolom bertab; gambar di dalam halaman tidak ikut; halaman hasil pindaian masuk sebagai gambar. Chrome belum mengizinkan file Word dibagikan langsung, jadi unduh dulu lalu lampirkan dari folder Download.
 - Hasil dari Excel berupa teks dan bisa dicari. Hasil dari Word dan gambar berupa gambar halaman.
 - File Word lama (.doc) belum didukung. Simpan ulang sebagai .docx dulu.
 

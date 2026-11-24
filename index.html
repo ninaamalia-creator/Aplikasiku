@@ -113,7 +113,9 @@ body[data-mode="convert"] .viewrow,body[data-mode="convert"] .main,body[data-mod
 .cv-wrap{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
 .cv-h{margin:0;font-size:22px;letter-spacing:-.01em;text-wrap:balance}
 .cv-sub{margin:-8px 0 0;color:var(--muted);line-height:1.5}
-.kinds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.kinds{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.kinds{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.usecur{justify-content:flex-start;text-align:left;height:auto;min-height:40px;padding:8px 12px;white-space:normal}
 .kind{position:relative;display:flex;flex-direction:column;gap:6px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--bar);cursor:pointer;min-width:0}
 .kind input{position:absolute;opacity:0;pointer-events:none}
 .kind:has(input:checked){border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
@@ -177,7 +179,7 @@ body[data-mode="convert"] .viewrow,body[data-mode="convert"] .main,body[data-mod
   </div>
   <div class="tabs" role="tablist" aria-label="Mode">
     <button role="tab" id="tab-view" aria-selected="true">Baca &amp; Cari</button>
-    <button role="tab" id="tab-conv" aria-selected="false">Ubah ke PDF</button>
+    <button role="tab" id="tab-conv" aria-selected="false">Ubah File</button>
   </div>
   <div class="row viewrow">
     <div class="search">
@@ -215,12 +217,13 @@ body[data-mode="convert"] .viewrow,body[data-mode="convert"] .main,body[data-mod
 </div>
 <section id="convert" hidden>
   <div class="cv-wrap">
-    <h1 class="cv-h">Ubah ke PDF</h1>
+    <h1 class="cv-h">Ubah file</h1>
     <p class="cv-sub">File diubah langsung di HP Anda. Tidak diunggah dan tidak disimpan.</p>
     <div class="kinds" role="radiogroup" aria-label="Jenis file">
-      <label class="kind"><input type="radio" name="kind" value="word" id="k-word" checked><span class="ftag w">W</span><b>Word</b><small>.docx</small></label>
-      <label class="kind"><input type="radio" name="kind" value="excel" id="k-excel"><span class="ftag x">X</span><b>Excel</b><small>.xlsx .xls .csv</small></label>
-      <label class="kind"><input type="radio" name="kind" value="image" id="k-image"><span class="ftag i">JPG</span><b>Gambar</b><small>.jpg .png</small></label>
+      <label class="kind"><input type="radio" name="kind" value="word" id="k-word" checked><span class="ftag w">W</span><b>Word ke PDF</b><small>.docx → .pdf</small></label>
+      <label class="kind"><input type="radio" name="kind" value="excel" id="k-excel"><span class="ftag x">X</span><b>Excel ke PDF</b><small>.xlsx .xls .csv → .pdf</small></label>
+      <label class="kind"><input type="radio" name="kind" value="image" id="k-image"><span class="ftag i">JPG</span><b>Gambar ke PDF</b><small>.jpg .png → .pdf</small></label>
+      <label class="kind"><input type="radio" name="kind" value="pdf2word" id="k-pdf2word"><span class="ftag p">PDF</span><b>PDF ke Word</b><small>.pdf → .docx</small></label>
     </div>
     <label class="pick" for="cvfile" id="pick">
       <svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
@@ -228,6 +231,7 @@ body[data-mode="convert"] .viewrow,body[data-mode="convert"] .main,body[data-mod
       <small id="pick-s">Atau bagikan file dari WhatsApp ke Lensa PDF</small>
     </label>
     <input type="file" id="cvfile" hidden>
+    <button class="btn usecur" id="usecur" hidden></button>
     <div class="chosen" id="chosen" hidden><span class="ftag" id="chosen-tag"></span><span class="nm" id="chosen-nm"></span><span class="sz" id="chosen-sz"></span><button class="btn icon" id="chosen-x" aria-label="Hapus file"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
     <ul class="thumbs" id="thumbs" hidden></ul>
     <div class="opts" id="opt-image" hidden>
@@ -241,9 +245,9 @@ body[data-mode="convert"] .viewrow,body[data-mode="convert"] .main,body[data-mod
     <div class="cvstatus" id="cvstatus" hidden><span id="cvmsg">Menyiapkan…</span><div class="bar"><i id="cvbar"></i></div></div>
     <div id="cverr" class="err" hidden style="margin:0;max-width:none"></div>
     <div class="result" id="cvresult" hidden>
-      <div class="top"><span class="ftag p">PDF</span><div style="min-width:0"><div class="nm" id="r-nm"></div><div class="meta" id="r-meta"></div></div></div>
+      <div class="top"><span class="ftag p" id="r-tag">PDF</span><div style="min-width:0"><div class="nm" id="r-nm"></div><div class="meta" id="r-meta"></div></div></div>
       <div class="acts">
-        <button class="btn primary" id="r-save">Simpan PDF</button>
+        <button class="btn primary" id="r-save">Unduh</button>
         <button class="btn" id="r-share" hidden>Bagikan</button>
         <button class="btn" id="r-view">Lihat di Lensa</button>
       </div>
@@ -278,6 +282,7 @@ async function openPdf(data,name,isSample){
   const id=++S.load;
   if(S.doc){try{S.doc.destroy()}catch(e){}}
   S.doc=null;S.pages=[];S.matches=[];S.cur=-1;
+  S.src={bytes:data.slice(0),name,sample:!!isSample};
   pagesEl.innerHTML='<div class="empty">Membuka dokumen…</div>';
   $('fname').innerHTML=esc(name)+(isSample?'<span class="sample">contoh</span>':'');
   let doc;
@@ -526,7 +531,7 @@ function setMode(m){
   setHH();if(m!=='convert'){if(S.fit)fitZoom();else applyZoom();updatePageInd();}
 }
 $('tab-view').onclick=()=>setMode('view');$('tab-conv').onclick=()=>setMode('convert');
-window.Lensa={openPdf,setMode};
+window.Lensa={openPdf,setMode,current:()=>S.src||null};
 
 /* ---------- File dari menu Bagikan ---------- */
 async function openShared(){
@@ -583,8 +588,11 @@ async function loadAll(list){for(const k of list)await load(k);}
 const KIND={
   word:{t:'Pilih file Word',s:'Format .docx. Atau bagikan file dari WhatsApp ke Lensa PDF.',accept:'.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document',tag:'W',cls:'w'},
   excel:{t:'Pilih file Excel',s:'Format .xlsx, .xls, atau .csv. Setiap sheet jadi bagian PDF.',accept:'.xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv',tag:'X',cls:'x'},
-  image:{t:'Pilih gambar',s:'Bisa pilih beberapa sekaligus. Setiap gambar jadi satu halaman.',accept:'image/*',tag:'JPG',cls:'i'}
+  image:{t:'Pilih gambar',s:'Bisa pilih beberapa sekaligus. Setiap gambar jadi satu halaman.',accept:'image/*',tag:'JPG',cls:'i'},
+  pdf2word:{t:'Pilih file PDF',s:'Teks diambil dari PDF dan bisa diedit di Word atau WPS.',accept:'.pdf,application/pdf',tag:'PDF',cls:'p'}
 };
+const DOCX='application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+const want=k=>k==='pdf2word'?'pdf':k;
 const C={kind:'word',file:null,images:[],blob:null,name:'',busy:false};
 
 function kindOf(f){
@@ -610,7 +618,10 @@ document.querySelectorAll('input[name="kind"]').forEach(r=>r.addEventListener('c
 
 function render(){
   const img=C.kind==='image';
-  const f=img?null:(C.file&&kindOf(C.file)===C.kind?C.file:null);
+  const f=img?null:(C.file&&kindOf(C.file)===want(C.kind)?C.file:null);
+  const cur=window.Lensa&&Lensa.current();
+  $('usecur').hidden=!(C.kind==='pdf2word'&&!f&&cur&&!cur.sample);
+  if(!$('usecur').hidden)$('usecur').textContent='Pakai dokumen yang sedang dibuka: '+cur.name;
   $('chosen').hidden=!f;
   if(f){const K=KIND[C.kind];const tg=$('chosen-tag');tg.textContent=K.tag;tg.className='ftag '+K.cls;
     $('chosen-nm').textContent=f.name;$('chosen-sz').textContent=fmtSize(f.size);}
@@ -629,9 +640,12 @@ function render(){
   $('pick-t').textContent=img&&C.images.length?'Tambah gambar lagi':(f?'Ganti file':KIND[C.kind].t);
   const ready=img?C.images.length>0:!!f;
   $('cvgo').disabled=!ready||C.busy;
-  $('cvgo').textContent=img&&C.images.length?'Ubah '+C.images.length+' gambar ke PDF':'Ubah ke PDF';
+  $('cvgo').textContent=img&&C.images.length?'Ubah '+C.images.length+' gambar ke PDF':C.kind==='pdf2word'?'Ubah ke Word':'Ubah ke PDF';
 }
 $('chosen-x').onclick=()=>{C.file=null;render();};
+$('usecur').onclick=()=>{const c=Lensa.current();if(!c)return;C.file=new File([c.bytes],c.name,{type:'application/pdf'});render();};
+if(window.Lensa){const so=Lensa.setMode;Lensa.setMode=m=>{so(m);if(m==='convert')render();};}
+$('tab-conv').addEventListener('click',()=>render());
 
 function showErr(msg){const e=$('cverr');e.textContent=msg;e.hidden=!msg;}
 function status(msg,frac){$('cvstatus').hidden=false;$('cvmsg').textContent=msg;$('cvbar').style.width=Math.round((frac||0)*100)+'%';}
@@ -642,6 +656,7 @@ function take(files,auto){
   showErr('');$('cvresult').hidden=true;
   const k=kindOf(files[0]);
   if(k==='oldword'){showErr('"'+files[0].name+'" adalah file Word lama (.doc). Buka di Word atau WPS, simpan ulang sebagai .docx, lalu coba lagi.');return;}
+  if(k==='pdf'&&C.kind==='pdf2word'&&!auto){C.file=files[0];render();return;}
   if(k==='pdf'){const f=files[0];Lensa.setMode('view');f.arrayBuffer().then(b=>Lensa.openPdf(new Uint8Array(b),f.name,false));return;}
   if(!k){showErr('"'+files[0].name+'" tidak bisa diubah. Pilih file Word (.docx), Excel (.xlsx), atau gambar (JPG/PNG).');return;}
   if(k==='image'){
@@ -663,14 +678,24 @@ async function convert(){
     let out;
     if(C.kind==='word')out=await wordToPdf(C.file);
     else if(C.kind==='excel')out=await excelToPdf(C.file,$('o-orient').value);
+    else if(C.kind==='pdf2word')out=await pdfToWord(C.file);
     else out=await imagesToPdf(C.images,$('o-page').value,+$('o-margin').value);
-    C.blob=out.blob;C.name=out.name;
+    C.blob=out.blob;C.name=out.name;C.mime=out.mime||'application/pdf';
+    const isDoc=C.mime===DOCX;
+    $('r-tag').textContent=isDoc?'W':'PDF';$('r-tag').className='ftag '+(isDoc?'w':'p');
+    $('r-view').hidden=isDoc;
     $('r-nm').textContent=out.name;
     $('r-meta').textContent=out.pages+' halaman · '+fmtSize(out.blob.size);
-    $('r-note').textContent=C.kind==='excel'
+    $('r-note').textContent=isDoc
+      ?'Teks bisa diedit di Word atau WPS. Tabel jadi kolom yang dipisah tab, dan gambar di dalam halaman tidak ikut.'
+        +(out.scanned?' '+out.scanned+' halaman berupa hasil pindaian, jadi dimasukkan sebagai gambar.':'')
+      :C.kind==='excel'
       ?'Teks di PDF ini bisa dicari di Lensa.'
       :'Halaman PDF ini berupa gambar, jadi teksnya tidak bisa dicari.'+(C.kind==='word'?' Jika ada font yang tidak terpasang di HP, tampilannya bisa sedikit berbeda dari aslinya.':'');
-    try{const f=new File([out.blob],out.name,{type:'application/pdf'});$('r-share').hidden=!(navigator.canShare&&navigator.canShare({files:[f]}));}catch(e){$('r-share').hidden=true;}
+    let canShare=false;
+    try{const f=new File([out.blob],out.name,{type:C.mime});canShare=!!(navigator.canShare&&navigator.canShare({files:[f]}));}catch(e){}
+    $('r-share').hidden=!canShare;
+    if(!canShare&&isDoc&&navigator.share)$('r-note').textContent+=' Chrome belum mengizinkan file Word dibagikan langsung. Ketuk Unduh, lalu lampirkan file dari folder Download di WhatsApp.';
     $('cvresult').hidden=false;$('cvstatus').hidden=true;
     $('cvresult').scrollIntoView({block:'nearest'});
   }catch(e){
@@ -826,6 +851,181 @@ async function imagesToPdf(items,mode,margin){
   return {blob:doc.output('blob'),name:(items.length>1?'Gambar '+items.length+' halaman':baseName(first))+'.pdf',pages:items.length};
 }
 
+/*CORE-START*/
+/* PDF ke Word: susun ulang teks dari posisi huruf, lalu tulis berkas .docx (Office Open XML). */
+function famOf(name){
+  const n=String(name||'').replace(/^[A-Z]{6}\+/,'').toLowerCase();
+  if(/courier|mono|consol/.test(n))return 'Courier New';
+  if(/calibri/.test(n))return 'Calibri';
+  if(/cambria/.test(n))return 'Cambria';
+  if(/times|roman|serif|georgia|garamond|book|minion/.test(n)&&!/sans/.test(n))return 'Times New Roman';
+  if(/verdana/.test(n))return 'Verdana';
+  if(/tahoma/.test(n))return 'Tahoma';
+  return 'Arial';
+}
+function layoutPage(items,W){
+  items=items.filter(i=>i.s&&i.s.trim()!==''&&i.size>0).sort((a,b)=>a.y-b.y||a.x-b.x);
+  const lines=[];
+  for(const it of items){
+    let L=null;
+    for(let k=lines.length-1;k>=Math.max(0,lines.length-3);k--){
+      const c=lines[k];if(Math.abs(c.y-it.y)<=Math.max(c.size,it.size)*.45){L=c;break;}
+    }
+    if(!L){L={y:it.y,size:it.size,items:[]};lines.push(L);}
+    L.items.push(it);L.size=Math.max(L.size,it.size);
+  }
+  lines.sort((a,b)=>a.y-b.y);
+  for(const L of lines){
+    L.items.sort((a,b)=>a.x-b.x);
+    const runs=[];let prevEnd=null,prev=null;
+    L.hasTab=false;L.tabs=[];
+    for(const it of L.items){
+      let pre='';
+      if(prevEnd!==null){
+        const gap=it.x-prevEnd;
+        if(gap>Math.max(it.size,prev.size)*2.2){pre='\t';L.hasTab=true;L.tabs.push(it.x);}
+        else if(gap>Math.min(it.size,prev.size)*.18&&!/\s$/.test(prev.s)&&!/^\s/.test(it.s))pre=' ';
+      }
+      const r={t:pre+it.s,b:!!it.bold,i:!!it.italic,sz:Math.round(it.size*2),f:it.fam||'Arial'};
+      const last=runs[runs.length-1];
+      if(last&&last.b===r.b&&last.i===r.i&&last.sz===r.sz&&last.f===r.f)last.t+=r.t;else runs.push(r);
+      prevEnd=it.x+(it.w||it.s.length*it.size*.5);prev=it;
+    }
+    L.runs=runs;L.l=L.items[0].x;L.r=prevEnd;L.text=runs.map(r=>r.t).join('');
+  }
+  if(!lines.length)return null;
+  const cl=Math.min(...lines.map(l=>l.l)),cr=Math.max(...lines.map(l=>l.r)),mid=(cl+cr)/2;
+  const paras=[];let P=null,prev=null;
+  for(const L of lines){
+    let align='left';
+    if(!L.hasTab&&Math.abs((L.l+L.r)/2-mid)<W*.03&&L.l-cl>W*.08&&cr-L.r>W*.08)align='center';
+    else if(!L.hasTab&&cr-L.r<W*.02&&L.l-cl>W*.35)align='right';
+    const gap=prev?L.y-prev.y:0;
+    const list=/^\s*([•\-–·▪●]|\d{1,3}[.)]|[a-zA-Z][.)])\s/.test(L.text);
+    const cont=P&&prev&&align==='left'&&P.align==='left'&&gap>0&&gap<=prev.size*1.75&&Math.abs(L.size-prev.size)<1.2
+      &&prev.r>cr-W*.12&&Math.abs(L.l-(P.lines.length>1?prev.l:P.lines[0].l))<prev.size*3&&!prev.hasTab&&!L.hasTab&&!list;
+    if(cont){
+      const last=P.runs[P.runs.length-1];
+      if(/[a-zA-Z]-$/.test(last.t)&&/^[a-z]/.test(L.runs[0].t))last.t=last.t.slice(0,-1);
+      else if(!/\s$/.test(last.t))last.t+=' ';
+      for(const r of L.runs){const z=P.runs[P.runs.length-1];
+        if(z.b===r.b&&z.i===r.i&&z.sz===r.sz&&z.f===r.f)z.t+=r.t;else P.runs.push({...r});}
+      P.lines.push(L);
+    }else{
+      const before=prev?Math.max(0,gap-prev.size*1.2):0;
+      P={align,before,runs:L.runs.map(r=>({...r})),lines:[L],tabs:L.tabs};paras.push(P);
+    }
+    prev=L;
+  }
+  for(const p of paras){
+    const ls=p.lines;
+    if(p.align==='left'){
+      if(ls.length>1){
+        const rest=Math.min(...ls.slice(1).map(l=>l.l));
+        p.indent=rest-cl;p.firstLine=ls[0].l-rest;
+        if(ls.slice(0,-1).every(l=>cr-l.r<W*.015))p.align='both';
+      }else{p.indent=ls[0].l-cl;p.firstLine=0;}
+    }else{p.indent=0;p.firstLine=0;}
+    p.size=Math.max(...ls.map(l=>l.size));
+  }
+  return {paras,cl,cr,top:lines[0].y-lines[0].size};
+}
+const xesc=s=>String(s).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F￾￿]/g,'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function runXml(r){
+  const pr='<w:rPr><w:rFonts w:ascii="'+r.f+'" w:hAnsi="'+r.f+'" w:cs="'+r.f+'"/>'+(r.b?'<w:b/><w:bCs/>':'')+(r.i?'<w:i/><w:iCs/>':'')+'<w:sz w:val="'+r.sz+'"/><w:szCs w:val="'+r.sz+'"/></w:rPr>';
+  return r.t.split('\t').map((t,k)=>(k?'<w:r>'+pr+'<w:tab/></w:r>':'')+(t?'<w:r>'+pr+'<w:t xml:space="preserve">'+xesc(t)+'</w:t></w:r>':'')).join('');
+}
+const tw=v=>Math.max(0,Math.round(v*20));
+function buildDocx(pages){
+  // pages: [{W,H,layout|null,image|null:{name,data,w,h}}]
+  const textPages=pages.filter(p=>p.layout);
+  const W=pages[0].W,H=pages[0].H;
+  const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+  const mL=textPages.length?clamp(Math.min(...textPages.map(p=>p.layout.cl))-2,18,108):54;
+  const mR=textPages.length?clamp(W-Math.max(...textPages.map(p=>p.layout.cr))-2,18,108):54;
+  const mT=textPages.length?clamp(Math.min(...textPages.map(p=>p.layout.top))-4,18,108):54;
+  const mB=Math.min(mT,54);
+  const body=[],rels=[],media=[];let pic=0;
+  pages.forEach((pg,pi)=>{
+    const brk=pi>0?'<w:pageBreakBefore/>':'';
+    if(pg.image){
+      pic++;const rid='rIdImg'+pic,fn='image'+pic+'.jpeg';
+      media.push({path:'word/media/'+fn,data:pg.image.data});
+      rels.push('<Relationship Id="'+rid+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/'+fn+'"/>');
+      const aw=W-mL-mR,ah=H-mT-mB-14,s=Math.min(aw/pg.image.w,ah/pg.image.h);
+      const cx=Math.round(pg.image.w*s*12700),cy=Math.round(pg.image.h*s*12700);
+      body.push('<w:p><w:pPr>'+brk+'<w:spacing w:before="0" w:after="0"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="'+cx+'" cy="'+cy+'"/><wp:docPr id="'+pic+'" name="Halaman '+(pi+1)+'"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="'+pic+'" name="'+fn+'"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="'+rid+'"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+cx+'" cy="'+cy+'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>');
+      return;
+    }
+    if(!pg.layout){body.push('<w:p><w:pPr>'+brk+'</w:pPr></w:p>');return;}
+    pg.layout.paras.forEach((p,k)=>{
+      const ind=p.align==='left'||p.align==='both'?Math.max(0,p.indent+pg.layout.cl-mL):0;
+      const fl=p.firstLine||0;
+      const indXml=(ind>3||Math.abs(fl)>3)?'<w:ind w:left="'+tw(ind)+'"'+(fl>3?' w:firstLine="'+tw(fl)+'"':fl<-3?' w:hanging="'+tw(-fl)+'"':'')+'/>':'';
+      const tabXml=p.tabs&&p.tabs.length?'<w:tabs>'+p.tabs.map(x=>'<w:tab w:val="left" w:pos="'+tw(x-mL)+'"/>').join('')+'</w:tabs>':'';
+      const before=k===0?Math.max(0,(pg.layout.top-mT)):p.before;
+      const line=Math.round(240*1.08);
+      body.push('<w:p><w:pPr>'+(k===0?brk:'')+tabXml+'<w:spacing w:before="'+Math.min(2880,tw(before))+'" w:after="0" w:line="'+line+'" w:lineRule="auto"/>'+indXml+'<w:jc w:val="'+p.align+'"/></w:pPr>'+p.runs.map(runXml).join('')+'</w:p>');
+    });
+  });
+  const land=W>H;
+  const sect='<w:sectPr><w:pgSz w:w="'+tw(W)+'" w:h="'+tw(H)+'"'+(land?' w:orient="landscape"':'')+'/><w:pgMar w:top="'+tw(mT)+'" w:right="'+tw(mR)+'" w:bottom="'+tw(mB)+'" w:left="'+tw(mL)+'" w:header="360" w:footer="360" w:gutter="0"/></w:sectPr>';
+  const files={};
+  files['[Content_Types].xml']='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpeg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>';
+  files['_rels/.rels']='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
+  files['word/_rels/document.xml.rels']='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdSt" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'+rels.join('')+'</Relationships>';
+  files['word/styles.xml']='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial" w:eastAsia="Arial"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="id-ID"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style></w:styles>';
+  files['word/document.xml']='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><w:body>'+body.join('')+sect+'</w:body></w:document>';
+  return {files,media};
+}
+/*CORE-END*/
+async function pdfToWord(file){
+  status('Memuat pengubah Word…',.05);
+  await loadAll(['jszip']);
+  const lib=window.pdfjsLib;if(!lib)throw new Error('lib');
+  let pdf;
+  try{pdf=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;}
+  catch(e){throw uerr(e&&e.name==='PasswordException'?'PDF ini dikunci kata sandi, jadi tidak bisa diubah.':'File PDF ini tidak bisa dibaca. Pastikan filenya tidak rusak.');}
+  const n=pdf.numPages,pages=[];let scanned=0;
+  for(let i=1;i<=n;i++){
+    status('Membaca halaman '+i+' dari '+n+'…',.08+.82*(i-1)/n);
+    const page=await pdf.getPage(i),vp=page.getViewport({scale:1});
+    const tc=await page.getTextContent();
+    const len=tc.items.reduce((a,it)=>a+(it.str?it.str.trim().length:0),0);
+    if(len<8){
+      const sc=Math.min(2,1700/vp.width),v2=page.getViewport({scale:sc});
+      const cv=document.createElement('canvas');cv.width=Math.floor(v2.width);cv.height=Math.floor(v2.height);
+      const cx=cv.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,cv.width,cv.height);
+      await page.render({canvasContext:cx,viewport:v2}).promise;
+      const b=await new Promise(r=>cv.toBlob(r,'image/jpeg',.85));
+      pages.push({W:vp.width,H:vp.height,layout:null,image:{data:new Uint8Array(await b.arrayBuffer()),w:cv.width,h:cv.height}});
+      scanned++;page.cleanup();continue;
+    }
+    try{await page.getOperatorList();}catch(e){}
+    const items=[];
+    for(const it of tc.items){
+      if(!it.str)continue;
+      const T=lib.Util.transform(vp.transform,it.transform);
+      let fo=null;try{if(page.commonObjs.has(it.fontName))fo=page.commonObjs.get(it.fontName);}catch(e){}
+      const fname=(fo&&fo.name)||((tc.styles[it.fontName]||{}).fontFamily)||'';
+      items.push({s:it.str,x:T[4],y:T[5],w:it.width,size:Math.hypot(T[2],T[3]),
+        bold:!!(fo&&(fo.bold||fo.black))||/bold|black|heavy|semibold|demi/i.test(fname),
+        italic:!!(fo&&fo.italic)||/italic|oblique/i.test(fname),fam:famOf(fname)});
+    }
+    pages.push({W:vp.width,H:vp.height,layout:layoutPage(items,vp.width)});
+    page.cleanup();
+    await new Promise(r=>setTimeout(r));
+  }
+  status('Menyusun file Word…',.94);
+  const {files,media}=buildDocx(pages);
+  const zip=new JSZip();
+  for(const k in files)zip.file(k,files[k]);
+  for(const m of media)zip.file(m.path,m.data);
+  const blob=await zip.generateAsync({type:'blob',mimeType:DOCX,compression:'DEFLATE'});
+  pdf.destroy();
+  return {blob,name:baseName(file.name)+'.docx',pages:n,scanned,mime:DOCX};
+}
+
 /* ---------- Hasil ---------- */
 $('r-save').onclick=()=>{
   if(!C.blob)return;const u=URL.createObjectURL(C.blob);const a=document.createElement('a');
@@ -833,8 +1033,8 @@ $('r-save').onclick=()=>{
 };
 $('r-share').onclick=async()=>{
   if(!C.blob)return;
-  try{await navigator.share({files:[new File([C.blob],C.name,{type:'application/pdf'})],title:C.name});}
-  catch(e){if(e&&e.name!=='AbortError')showErr('Gagal membuka menu Bagikan. Gunakan Simpan PDF lalu kirim dari WhatsApp.');}
+  try{await navigator.share({files:[new File([C.blob],C.name,{type:C.mime})],title:C.name});}
+  catch(e){if(e&&e.name!=='AbortError')showErr('Menu Bagikan gagal dibuka. Ketuk Unduh, lalu kirim file dari folder Download.');}
 };
 $('r-view').onclick=async()=>{
   if(!C.blob)return;Lensa.setMode('view');

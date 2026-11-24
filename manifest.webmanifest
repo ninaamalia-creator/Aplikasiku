@@ -1,7 +1,7 @@
 {
   "name": "Lensa PDF",
   "short_name": "Lensa PDF",
-  "description": "Baca PDF, cari kata, dan ubah Word, Excel, atau gambar ke PDF. Tanpa menyimpan dokumen.",
+  "description": "Baca PDF, cari kata, ubah Word, Excel, atau gambar ke PDF, dan ubah PDF ke Word. Tanpa menyimpan dokumen.",
   "lang": "id",
   "start_url": "./",
   "scope": "./",
